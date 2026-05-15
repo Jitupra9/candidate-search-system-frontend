@@ -1,1 +1,0 @@
-# candidate-search-system-frontend
