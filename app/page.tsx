@@ -29,7 +29,6 @@ import {
   Settings,
   Crown,
   Zap,
-  Bell,
   Search,
   FolderPlus,
   Globe,
@@ -40,8 +39,12 @@ import {
   Copy,
   Pin,
   Archive,
-  ChevronLeft,
   Keyboard,
+  ChevronLeft,
+  PanelLeftClose,
+  PanelLeft,
+  Timer,
+  TimerOff,
 } from "lucide-react";
 
 // ============ TypeScript Declarations ============
@@ -225,6 +228,217 @@ const getAIResponse = async (
   ];
 
   return responses[Math.floor(Math.random() * responses.length)];
+};
+
+// ============ Voice Listening Modal ============
+const VoiceListeningModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [tick, setTick] = useState(0); // ← NEW
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const tickRef = useRef<number | null>(null); // ← NEW
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Waveform animation tick
+    const loop = () => {
+      setTick(Date.now());
+      tickRef.current = requestAnimationFrame(loop);
+    };
+    tickRef.current = requestAnimationFrame(loop);
+
+    let audioContext: AudioContext | null = null;
+    let stream: MediaStream | null = null;
+
+    const setupAudio = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const updateLevel = () => {
+          if (analyserRef.current) {
+            analyserRef.current.getByteFrequencyData(dataArray);
+            const average =
+              dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+            setAudioLevel(average / 255);
+          }
+          animationRef.current = requestAnimationFrame(updateLevel);
+        };
+        updateLevel();
+      } catch {
+        /* mic denied */
+      }
+    };
+    setupAudio();
+
+    return () => {
+      if (tickRef.current) cancelAnimationFrame(tickRef.current);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+      if (audioContext) audioContext.close();
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-background/98 backdrop-blur-2xl flex items-center justify-center z-50">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-accent/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
+      </div>
+
+      <button
+        onClick={onClose}
+        className="absolute top-8 right-8 p-3 rounded-full bg-secondary/30 hover:bg-secondary/50 border border-white/5 backdrop-blur-sm transition-all duration-300 group"
+        style={{ transition: "transform 0.3s" }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.transform = "rotate(90deg)")
+        }
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "rotate(0deg)")}
+      >
+        <X className="w-5 h-5 text-foreground/60" />
+      </button>
+
+      <div className="flex flex-col items-center gap-8 max-w-md w-full px-8">
+        {/* Mic + ripples */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-40 h-40 flex items-center justify-center">
+            {/* Ripple rings — inline style only, no Tailwind translate classes */}
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="absolute rounded-full border border-primary/20 pointer-events-none"
+                style={{
+                  width: `${120 + i * 20}px`,
+                  height: `${120 + i * 20}px`,
+                  top: "50%",
+                  left: "50%",
+                  transform: `translate(-50%, -50%) scale(${1 + audioLevel * (i + 1) * 0.3})`,
+                  opacity: Math.max(0, 0.4 - i * 0.15 - audioLevel * 0.1),
+                  transition: "transform 0.3s, opacity 0.3s",
+                }}
+              />
+            ))}
+
+            {/* Spin ring — inline animation only */}
+            <div
+              className="absolute inset-0 rounded-full opacity-20"
+              style={{
+                animation: "nexus-spin 3s linear infinite",
+                background:
+                  "conic-linear(from 0deg, var(--color-primary, #3b82f6), transparent)",
+              }}
+            />
+
+            {/* Mic button */}
+            <div
+              className="relative w-32 h-32 rounded-full bg-linear-to-br from-background to-secondary/50 border border-white/10 flex items-center justify-center shadow-2xl"
+              style={{
+                transform: `scale(${0.95 + audioLevel * 0.05})`,
+                transition: "transform 0.2s",
+              }}
+            >
+              <Mic className="w-12 h-12 text-primary/80" />
+              {audioLevel > 0.1 && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+              )}
+            </div>
+          </div>
+
+          {/* Waveform — uses tick for live animation */}
+          <div className="flex items-end justify-center gap-1 h-12 w-full">
+            {Array.from({ length: 20 }, (_, i) => {
+              const h =
+                audioLevel > 0.05
+                  ? Math.abs(Math.sin(i * 0.5 + tick * 0.005)) *
+                      audioLevel *
+                      40 +
+                    audioLevel * 20
+                  : Math.abs(Math.sin(i * 0.5)) * 8 + 8;
+              return (
+                <div
+                  key={i}
+                  className="w-1.5 rounded-full bg-linear-to-t from-primary to-accent"
+                  style={{
+                    height: `${Math.max(4, h)}px`,
+                    opacity: 0.3 + audioLevel * 0.7,
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Status — flex row, no absolute positioning */}
+        <div className="text-center space-y-3 w-full">
+          <div className="flex items-center justify-center gap-3">
+            <p className="text-3xl font-bold bg-linear-to-r from-foreground via-primary to-foreground/70 bg-clip-text text-transparent">
+              {audioLevel > 0.1 ? "Listening..." : "Ready to Listen"}
+            </p>
+            <div className="flex gap-1 items-center">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-primary"
+                  style={{ animation: `nexus-pulse 1.4s ${i * 0.2}s infinite` }}
+                />
+              ))}
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground/80 flex items-center justify-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full ${audioLevel > 0.1 ? "bg-green-500 animate-pulse" : "bg-secondary"}`}
+            />
+            {audioLevel > 0.1 ? "I can hear you clearly" : "Speak now to begin"}
+          </p>
+        </div>
+
+        {/* Stop button */}
+        <button onClick={onClose} className="group relative w-full max-w-xs">
+          <div className="absolute -inset-1 bg-linear-to-r from-red-500 via-rose-500 to-red-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300" />
+          <div className="relative flex items-center justify-center gap-3 px-8 py-5 bg-linear-to-r from-red-500/90 to-rose-500/90 text-white rounded-2xl font-semibold border border-white/10 hover:scale-[1.02] active:scale-[0.98] transition-transform">
+            <div className="relative flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full border-2 border-white/80 flex items-center justify-center">
+                <div className="w-3 h-3 bg-white rounded-sm" />
+              </div>
+              <div className="absolute inset-0 rounded-full border border-white/30 animate-ping" />
+            </div>
+            <span className="text-lg">Stop Recording</span>
+          </div>
+        </button>
+
+        <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground/60">
+          <kbd className="px-2 py-1 bg-secondary/50 border border-border/50 rounded-lg text-[10px] font-mono">
+            ESC
+          </kbd>
+          <span>to cancel</span>
+          <span className="w-1 h-1 rounded-full bg-border" />
+          <span>Click anywhere</span>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes nexus-pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+        @keyframes nexus-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
 };
 
 // ============ Voice Recorder Component ============
@@ -977,9 +1191,13 @@ const ProjectModal = ({
 const SettingsModal = ({
   isOpen,
   onClose,
+  isDark,
+  onToggleTheme,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  isDark: boolean;
+  onToggleTheme: () => void;
 }) => {
   const [activeTab, setActiveTab] = useState<
     "general" | "account" | "shortcuts"
@@ -1045,11 +1263,22 @@ const SettingsModal = ({
                           Choose light or dark mode
                         </p>
                       </div>
-                      <select className="px-3 py-2 bg-secondary border border-border rounded-xl text-sm">
-                        <option>System</option>
-                        <option>Light</option>
-                        <option>Dark</option>
-                      </select>
+                      <button
+                        onClick={onToggleTheme}
+                        className="flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-xl text-sm hover:bg-secondary/80 transition-colors"
+                      >
+                        {isDark ? (
+                          <>
+                            <Moon className="w-4 h-4" />
+                            Dark
+                          </>
+                        ) : (
+                          <>
+                            <Sun className="w-4 h-4" />
+                            Light
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1427,20 +1656,19 @@ const ChatContextMenu = ({
 
 // ============ Header Component ============
 const Header = ({
-  isDark,
-  onToggleTheme,
   onToggleSidebar,
   onOpenSearch,
   onOpenSettings,
+  isTemporaryChat,
+  onToggleTemporaryChat,
 }: {
-  isDark: boolean;
-  onToggleTheme: () => void;
   onToggleSidebar: () => void;
   onOpenSearch: () => void;
   onOpenSettings: () => void;
+  isTemporaryChat: boolean;
+  onToggleTemporaryChat: () => void;
 }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   return (
     <>
@@ -1466,27 +1694,32 @@ const Header = ({
 
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-xl hover:bg-secondary transition-colors relative"
+            onClick={onToggleTemporaryChat}
+            className={`p-2 rounded-xl transition-colors flex items-center gap-1.5 ${
+              isTemporaryChat
+                ? "bg-accent/20 text-accent"
+                : "hover:bg-secondary text-muted-foreground"
+            }`}
+            title={
+              isTemporaryChat
+                ? "Temporary chat ON - History won't be saved"
+                : "Enable temporary chat"
+            }
           >
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full"></span>
+            {isTemporaryChat ? (
+              <TimerOff className="w-5 h-5" />
+            ) : (
+              <Timer className="w-5 h-5" />
+            )}
+            <span className="text-xs font-medium hidden sm:inline">
+              {isTemporaryChat ? "Temp" : ""}
+            </span>
           </button>
           <button
             onClick={onOpenSettings}
             className="p-2 rounded-xl hover:bg-secondary transition-colors"
           >
             <Settings className="w-5 h-5 text-muted-foreground" />
-          </button>
-          <button
-            onClick={onToggleTheme}
-            className="p-2 rounded-xl hover:bg-secondary transition-colors"
-          >
-            {isDark ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            )}
           </button>
           <button
             onClick={() => setShowLoginModal(true)}
@@ -1615,6 +1848,8 @@ const ChatSidebar = ({
   onEditProject,
   onDeleteProject,
   onSelectProject,
+  isCollapsed,
+  onToggleCollapse,
 }: {
   chats: ChatSession[];
   currentChatId: string | null;
@@ -1635,12 +1870,15 @@ const ChatSidebar = ({
   onEditProject: (project: Project) => void;
   onDeleteProject: (id: string) => void;
   onSelectProject: (id: string | null) => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }) => {
   const [contextMenu, setContextMenu] = useState<{
     chat: ChatSession;
     position: { x: number; y: number };
   } | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState<string | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const filteredChats = chats.filter((c) => {
     if (currentProjectId) return c.projectId === currentProjectId;
@@ -1649,6 +1887,82 @@ const ChatSidebar = ({
 
   const pinnedChats = filteredChats.filter((c) => c.isPinned);
   const regularChats = filteredChats.filter((c) => !c.isPinned);
+
+  // Collapsed sidebar (icons only)
+  if (isCollapsed) {
+    return (
+      <aside
+        className="hidden md:flex w-16 bg-sidebar border-r border-sidebar-border flex-col h-full group/sidebar"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Logo / Expand Button */}
+        <div className="p-3 border-b border-sidebar-border flex items-center justify-center">
+          {isHovered ? (
+            <button
+              onClick={onToggleCollapse}
+              className="w-10 h-10 rounded-xl bg-sidebar-accent hover:bg-primary/20 flex items-center justify-center transition-all"
+              title="Expand sidebar"
+            >
+              <PanelLeft className="w-5 h-5 text-muted-foreground" />
+            </button>
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
+              <Sparkles className="w-5 h-5 text-primary-foreground" />
+            </div>
+          )}
+        </div>
+
+        {/* New Chat Button */}
+        <div className="p-2">
+          <button
+            onClick={onNewChat}
+            className="w-full flex items-center justify-center p-3 bg-primary hover:opacity-90 text-primary-foreground rounded-xl transition-all shadow-lg shadow-primary/20"
+            title="New Chat"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Create Project */}
+        <div className="px-2 py-1">
+          <button
+            onClick={onCreateProject}
+            className="w-full flex items-center justify-center p-3 hover:bg-sidebar-accent rounded-xl transition-colors text-muted-foreground hover:text-foreground"
+            title="Create Project"
+          >
+            <FolderPlus className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Instructions */}
+        <div className="p-2 border-t border-sidebar-border">
+          <Link
+            href="/instructions"
+            className="w-full flex items-center justify-center p-3 hover:bg-sidebar-accent rounded-xl transition-colors text-muted-foreground hover:text-foreground"
+            title="Instructions & Guide"
+          >
+            <BookOpen className="w-5 h-5" />
+          </Link>
+        </div>
+
+        {/* User Profile */}
+        <div className="p-2 border-t border-sidebar-border">
+          <button
+            className="w-full flex items-center justify-center p-2 hover:bg-sidebar-accent rounded-xl transition-colors"
+            title="Guest User"
+          >
+            <div className="w-8 h-8 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm">
+              G
+            </div>
+          </button>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <>
@@ -1676,12 +1990,21 @@ const ChatSidebar = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onToggle}
-            className="p-2 rounded-xl hover:bg-sidebar-accent transition-colors md:hidden"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onToggleCollapse}
+              className="hidden md:flex p-2 rounded-xl hover:bg-sidebar-accent transition-colors"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose className="w-5 h-5 text-muted-foreground" />
+            </button>
+            <button
+              onClick={onToggle}
+              className="p-2 rounded-xl hover:bg-sidebar-accent transition-colors md:hidden"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* New Chat Button */}
@@ -1951,6 +2274,7 @@ export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -1974,6 +2298,7 @@ export default function Home() {
     id: string;
   } | null>(null);
   const [copiedMessage, setCopiedMessage] = useState(false);
+  const [isTemporaryChat, setIsTemporaryChat] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -2061,7 +2386,7 @@ export default function Home() {
           createNewChat();
         } else if (e.key === "b") {
           e.preventDefault();
-          setIsSidebarOpen((prev) => !prev);
+          setIsSidebarCollapsed((prev) => !prev);
         }
       }
       if (e.key === "Escape") {
@@ -2286,15 +2611,17 @@ export default function Home() {
         }}
         onDeleteProject={(id) => setDeleteModal({ type: "project", id })}
         onSelectProject={setCurrentProjectId}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <Header
-          isDark={isDark}
-          onToggleTheme={() => setIsDark(!isDark)}
           onToggleSidebar={() => setIsSidebarOpen(true)}
           onOpenSearch={() => setIsSearchOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          isTemporaryChat={isTemporaryChat}
+          onToggleTemporaryChat={() => setIsTemporaryChat(!isTemporaryChat)}
         />
 
         <div className="flex-1 overflow-y-auto">
@@ -2522,6 +2849,8 @@ export default function Home() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        isDark={isDark}
+        onToggleTheme={() => setIsDark(!isDark)}
       />
 
       <SearchModal
@@ -2550,6 +2879,12 @@ export default function Home() {
             ? "Are you sure you want to delete this chat? This action cannot be undone."
             : "Are you sure you want to delete this project? All associated chats will be moved to All Chats."
         }
+      />
+
+      {/* Voice Listening Modal */}
+      <VoiceListeningModal
+        isOpen={isListening}
+        onClose={() => setIsListening(false)}
       />
 
       {/* Toast */}
