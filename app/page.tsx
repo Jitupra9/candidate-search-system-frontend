@@ -13,7 +13,7 @@ import {
   Sun,
   User,
   Bot,
-  Sparkles,
+  Leaf,
   ChevronRight,
   Paperclip,
   Image as ImageIcon,
@@ -43,8 +43,19 @@ import {
   ChevronLeft,
   PanelLeftClose,
   PanelLeft,
-  Timer,
-  TimerOff,
+  EyeOff,
+  Mail,
+  MessageCircle,
+  Download,
+  Share2,
+  RefreshCw,
+  Star,
+  History,
+  Sparkles,
+  ThumbsUp,
+  ThumbsDown,
+  Pencil,
+  RotateCcw,
 } from "lucide-react";
 
 // ============ TypeScript Declarations ============
@@ -63,6 +74,9 @@ type Message = {
   timestamp: Date;
   attachments?: Attachment[];
   model?: string;
+  isFavorite?: boolean;
+  isLiked?: boolean;
+  isDisliked?: boolean;
 };
 
 type Attachment = {
@@ -215,15 +229,15 @@ const getAIResponse = async (
   if (attachments.length > 0) {
     attachmentContext = `\n\n📎 **Files analyzed:** ${attachments.map((a) => a.name).join(", ")}\n`;
     if (attachments.some((a) => a.type === "image")) {
-      attachmentContext += `🖼️ I&apos;ve analyzed the image(s) you shared. `;
+      attachmentContext += `🖼️ I've analyzed the image(s) you shared. `;
     }
     if (attachments.some((a) => a.type === "document")) {
-      attachmentContext += `📄 I&apos;ve processed the document(s) content. `;
+      attachmentContext += `📄 I've processed the document(s) content. `;
     }
   }
 
   const responses = [
-    `Using **${model.name}** (${model.provider.toUpperCase()})${attachmentContext}\n\nGreat question! Based on my analysis, here&apos;s my response to "${userQuery.slice(0, 80)}${userQuery.length > 80 ? "..." : ""}"\n\nThe key points to consider are understanding your specific needs, evaluating different approaches, and finding optimal solutions. Would you like me to elaborate further?`,
+    `Using **${model.name}** (${model.provider.toUpperCase()})${attachmentContext}\n\nGreat question! Based on my analysis, here's my response to "${userQuery.slice(0, 80)}${userQuery.length > 80 ? "..." : ""}"\n\nThe key points to consider are understanding your specific needs, evaluating different approaches, and finding optimal solutions. Would you like me to elaborate further?`,
     `**${model.name}** here!${attachmentContext}\n\nI appreciate your question. The most important factors to keep in mind include practical implementation strategies, potential challenges, and best practices from industry standards.\n\nDoes this help answer your question?`,
   ];
 
@@ -239,15 +253,14 @@ const VoiceListeningModal = ({
   onClose: () => void;
 }) => {
   const [audioLevel, setAudioLevel] = useState(0);
-  const [tick, setTick] = useState(0); // ← NEW
+  const [tick, setTick] = useState(0);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationRef = useRef<number | null>(null);
-  const tickRef = useRef<number | null>(null); // ← NEW
+  const tickRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
-    // Waveform animation tick
     const loop = () => {
       setTick(Date.now());
       tickRef.current = requestAnimationFrame(loop);
@@ -305,7 +318,7 @@ const VoiceListeningModal = ({
 
       <button
         onClick={onClose}
-        className="absolute top-8 right-8 p-3 rounded-full bg-secondary/30 hover:bg-secondary/50 border border-white/5 backdrop-blur-sm transition-all duration-300 group"
+        className="absolute top-8 right-8 p-3 rounded-full bg-secondary/30 hover:bg-secondary/50 border border-border/5 backdrop-blur-sm transition-all duration-300 group"
         style={{ transition: "transform 0.3s" }}
         onMouseEnter={(e) =>
           (e.currentTarget.style.transform = "rotate(90deg)")
@@ -316,10 +329,8 @@ const VoiceListeningModal = ({
       </button>
 
       <div className="flex flex-col items-center gap-8 max-w-md w-full px-8">
-        {/* Mic + ripples */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-40 h-40 flex items-center justify-center">
-            {/* Ripple rings — inline style only, no Tailwind translate classes */}
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -336,7 +347,6 @@ const VoiceListeningModal = ({
               />
             ))}
 
-            {/* Spin ring — inline animation only */}
             <div
               className="absolute inset-0 rounded-full opacity-20"
               style={{
@@ -346,9 +356,8 @@ const VoiceListeningModal = ({
               }}
             />
 
-            {/* Mic button */}
             <div
-              className="relative w-32 h-32 rounded-full bg-linear-to-br from-background to-secondary/50 border border-white/10 flex items-center justify-center shadow-2xl"
+              className="relative w-32 h-32 rounded-full bg-linear-to-br from-background to-secondary/50 border border-border/10 flex items-center justify-center shadow-2xl"
               style={{
                 transform: `scale(${0.95 + audioLevel * 0.05})`,
                 transition: "transform 0.2s",
@@ -361,7 +370,6 @@ const VoiceListeningModal = ({
             </div>
           </div>
 
-          {/* Waveform — uses tick for live animation */}
           <div className="flex items-end justify-center gap-1 h-12 w-full">
             {Array.from({ length: 20 }, (_, i) => {
               const h =
@@ -385,7 +393,6 @@ const VoiceListeningModal = ({
           </div>
         </div>
 
-        {/* Status — flex row, no absolute positioning */}
         <div className="text-center space-y-3 w-full">
           <div className="flex items-center justify-center gap-3">
             <p className="text-3xl font-bold bg-linear-to-r from-foreground via-primary to-foreground/70 bg-clip-text text-transparent">
@@ -409,15 +416,14 @@ const VoiceListeningModal = ({
           </p>
         </div>
 
-        {/* Stop button */}
         <button onClick={onClose} className="group relative w-full max-w-xs">
           <div className="absolute -inset-1 bg-linear-to-r from-red-500 via-rose-500 to-red-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300" />
-          <div className="relative flex items-center justify-center gap-3 px-8 py-5 bg-linear-to-r from-red-500/90 to-rose-500/90 text-white rounded-2xl font-semibold border border-white/10 hover:scale-[1.02] active:scale-[0.98] transition-transform">
+          <div className="relative flex items-center justify-center gap-3 px-8 py-5 bg-linear-to-r from-red-500/90 to-rose-500/90 text-foreground rounded-2xl font-semibold border border-border/10 hover:scale-[1.02] active:scale-[0.98] transition-transform">
             <div className="relative flex items-center justify-center">
-              <div className="w-6 h-6 rounded-full border-2 border-white/80 flex items-center justify-center">
-                <div className="w-3 h-3 bg-white rounded-sm" />
+              <div className="w-6 h-6 rounded-full border-2 border-foreground/80 flex items-center justify-center">
+                <div className="w-3 h-3 bg-foreground rounded-sm" />
               </div>
-              <div className="absolute inset-0 rounded-full border border-white/30 animate-ping" />
+              <div className="absolute inset-0 rounded-full border border-foreground/30 animate-ping" />
             </div>
             <span className="text-lg">Stop Recording</span>
           </div>
@@ -452,6 +458,7 @@ const VoiceRecorder = ({
   setIsListening: (listening: boolean) => void;
 }) => {
   const recognitionRef = useRef<unknown>(null);
+  const isManualStopRef = useRef(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -462,23 +469,37 @@ const VoiceRecorder = ({
 
       if (SpeechRecognitionAPI) {
         const recognitionInstance = new SpeechRecognitionAPI();
-        recognitionInstance.continuous = false;
+        recognitionInstance.continuous = true;
         recognitionInstance.interimResults = false;
         recognitionInstance.lang = "en-US";
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         recognitionInstance.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          onTranscript(transcript);
-          setIsListening(false);
+          const lastResult = event.results[event.results.length - 1];
+          if (lastResult.isFinal) {
+            const transcript = lastResult[0].transcript;
+            onTranscript(transcript);
+          }
         };
 
-        recognitionInstance.onerror = () => {
-          setIsListening(false);
+        recognitionInstance.onerror = (event: { error: string }) => {
+          if (event.error !== "aborted") {
+            setIsListening(false);
+          }
         };
 
         recognitionInstance.onend = () => {
-          setIsListening(false);
+          if (isManualStopRef.current) {
+            isManualStopRef.current = false;
+            setIsListening(false);
+          } else if (isListening) {
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (recognitionRef.current as any)?.start();
+            } catch {
+              setIsListening(false);
+            }
+          }
         };
 
         recognitionRef.current = recognitionInstance;
@@ -488,6 +509,7 @@ const VoiceRecorder = ({
     return () => {
       if (recognitionRef.current) {
         try {
+          isManualStopRef.current = true;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (recognitionRef.current as any).stop();
         } catch {
@@ -495,7 +517,7 @@ const VoiceRecorder = ({
         }
       }
     };
-  }, [onTranscript, setIsListening]);
+  }, [onTranscript, setIsListening, isListening]);
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
@@ -504,10 +526,12 @@ const VoiceRecorder = ({
     }
 
     if (isListening) {
+      isManualStopRef.current = true;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (recognitionRef.current as any).stop();
       setIsListening(false);
     } else {
+      isManualStopRef.current = false;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (recognitionRef.current as any).start();
       setIsListening(true);
@@ -718,22 +742,58 @@ const CodeSnippetBox = ({
   );
 };
 
-// ============ Message Component ============
+// ============ Message Component (ChatGPT-style always-visible actions) ============
 const ChatMessage = ({
   message,
   onCopy,
+  onRegenerate,
+  onToggleFavorite,
+  onEdit,
+  onResend,
+  onLike,
+  onDislike,
+  isFavorite,
+  isLastAssistant,
 }: {
   message: Message;
   onCopy: (content: string) => void;
+  onRegenerate?: () => void;
+  onToggleFavorite?: () => void;
+  onEdit?: (messageId: string, newContent: string) => void;
+  onResend?: (messageId: string) => void;
+  onLike?: (messageId: string) => void;
+  onDislike?: (messageId: string) => void;
+  isFavorite?: boolean;
+  isLastAssistant?: boolean;
 }) => {
   const isUser = message.role === "user";
-  const [showActions, setShowActions] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditing && editRef.current) {
+      editRef.current.focus();
+      editRef.current.style.height = "auto";
+      editRef.current.style.height = editRef.current.scrollHeight + "px";
+    }
+  }, [isEditing]);
+
+  const handleSaveEdit = () => {
+    if (editContent.trim() && onEdit) {
+      onEdit(message.id, editContent.trim());
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditContent(message.content);
+    setIsEditing(false);
+  };
 
   return (
     <div
-      className={`flex gap-4 py-6 px-4 md:px-6 group ${!isUser && "bg-secondary/20"}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      className={`flex gap-4 py-6 px-4 md:px-6 ${!isUser && "bg-secondary/20"}`}
     >
       <div
         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${
@@ -747,7 +807,7 @@ const ChatMessage = ({
       <div className="flex-1 space-y-2 max-w-3xl">
         <div className="flex items-center gap-3 flex-wrap">
           <span className="font-semibold text-sm">
-            {isUser ? "You" : "NexusAI"}
+            {isUser ? "You" : "MindLeaf"}
           </span>
           <span className="text-xs text-muted-foreground">
             {message.timestamp.toLocaleTimeString([], {
@@ -759,6 +819,9 @@ const ChatMessage = ({
             <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
               {message.model}
             </span>
+          )}
+          {isFavorite && (
+            <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
           )}
         </div>
 
@@ -785,12 +848,53 @@ const ChatMessage = ({
           </div>
         )}
 
-        <div className="text-foreground/90 text-sm leading-relaxed whitespace-pre-wrap">
-          {message.content}
-        </div>
+        {/* Message content or edit mode */}
+        {isEditing ? (
+          <div className="space-y-2">
+            <textarea
+              ref={editRef}
+              value={editContent}
+              onChange={(e) => {
+                setEditContent(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = e.target.scrollHeight + "px";
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSaveEdit();
+                }
+                if (e.key === "Escape") {
+                  handleCancelEdit();
+                }
+              }}
+              className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[60px] leading-relaxed"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-all"
+              >
+                Save & Submit
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-1.5 bg-secondary border border-border rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-foreground/90 text-sm leading-relaxed whitespace-pre-wrap">
+            {message.content}
+          </div>
+        )}
 
-        {showActions && !isUser && (
-          <div className="flex items-center gap-1 pt-2">
+        {/* Always-visible action buttons (ChatGPT style) */}
+        {!isEditing && (
+          <div className="flex items-center gap-1 pt-1">
+            {/* Copy - for both user and assistant */}
             <button
               onClick={() => onCopy(message.content)}
               className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
@@ -798,6 +902,100 @@ const ChatMessage = ({
             >
               <Copy className="w-3.5 h-3.5" />
             </button>
+
+            {/* User message actions */}
+            {isUser && (
+              <>
+                {/* Edit */}
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                  title="Edit message"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Resend */}
+                {onResend && (
+                  <button
+                    onClick={() => onResend(message.id)}
+                    className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                    title="Resend message"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Assistant message actions */}
+            {!isUser && (
+              <>
+                {/* Like */}
+                {onLike && (
+                  <button
+                    onClick={() => onLike(message.id)}
+                    className={`p-1.5 rounded-lg hover:bg-secondary transition-colors ${
+                      message.isLiked
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Good response"
+                  >
+                    <ThumbsUp
+                      className={`w-3.5 h-3.5 ${message.isLiked ? "fill-current" : ""}`}
+                    />
+                  </button>
+                )}
+
+                {/* Dislike */}
+                {onDislike && (
+                  <button
+                    onClick={() => onDislike(message.id)}
+                    className={`p-1.5 rounded-lg hover:bg-secondary transition-colors ${
+                      message.isDisliked
+                        ? "text-destructive"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Bad response"
+                  >
+                    <ThumbsDown
+                      className={`w-3.5 h-3.5 ${message.isDisliked ? "fill-current" : ""}`}
+                    />
+                  </button>
+                )}
+
+                {/* Regenerate (only for last assistant message) */}
+                {isLastAssistant && onRegenerate && (
+                  <button
+                    onClick={onRegenerate}
+                    className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                    title="Regenerate response"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Favorite - for both */}
+            {onToggleFavorite && (
+              <button
+                onClick={onToggleFavorite}
+                className={`p-1.5 rounded-lg hover:bg-secondary transition-colors ${
+                  isFavorite
+                    ? "text-yellow-500"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title={
+                  isFavorite ? "Remove from favorites" : "Add to favorites"
+                }
+              >
+                <Star
+                  className={`w-3.5 h-3.5 ${isFavorite ? "fill-current" : ""}`}
+                />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -949,7 +1147,8 @@ const FileUploadModal = ({
             disabled={selectedFiles.length === 0}
             className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-all"
           >
-            Add {selectedFiles.length > 0 ? `(${selectedFiles.length})` : ""}
+            {"Add"}{" "}
+            {selectedFiles.length > 0 ? `(${selectedFiles.length})` : ""}
           </button>
         </div>
       </div>
@@ -1200,7 +1399,7 @@ const SettingsModal = ({
   onToggleTheme: () => void;
 }) => {
   const [activeTab, setActiveTab] = useState<
-    "general" | "account" | "shortcuts"
+    "general" | "account" | "shortcuts" | "contact"
   >("general");
 
   if (!isOpen) return null;
@@ -1209,6 +1408,7 @@ const SettingsModal = ({
     { id: "general" as const, label: "General", icon: Settings },
     { id: "account" as const, label: "Account", icon: User },
     { id: "shortcuts" as const, label: "Shortcuts", icon: Keyboard },
+    { id: "contact" as const, label: "Contact Us", icon: Mail },
   ];
 
   const shortcuts = [
@@ -1248,9 +1448,17 @@ const SettingsModal = ({
                 {tab.label}
               </button>
             ))}
+
+            <Link
+              href="/instructions"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-secondary text-muted-foreground mt-2 border-t border-border pt-4"
+            >
+              <BookOpen className="w-4 h-4" />
+              Instructions & Guide
+            </Link>
           </div>
 
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-6 overflow-y-auto max-h-[60vh]">
             {activeTab === "general" && (
               <div className="space-y-6">
                 <div>
@@ -1347,6 +1555,71 @@ const SettingsModal = ({
                 ))}
               </div>
             )}
+
+            {activeTab === "contact" && (
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-medium mb-3">Get in Touch</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                    Have questions, feedback, or need assistance? We&apos;d love
+                    to hear from you.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <a
+                    href="mailto:support@mindleaf.ai"
+                    className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl hover:bg-secondary transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Email Support</p>
+                      <p className="text-xs text-muted-foreground">
+                        support@mindleaf.ai
+                      </p>
+                    </div>
+                  </a>
+
+                  <a
+                    href="#"
+                    className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl hover:bg-secondary transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <MessageCircle className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Live Chat</p>
+                      <p className="text-xs text-muted-foreground">
+                        Chat with our support team
+                      </p>
+                    </div>
+                  </a>
+
+                  <a
+                    href="#"
+                    className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl hover:bg-secondary transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Help Center</p>
+                      <p className="text-xs text-muted-foreground">
+                        Browse FAQs and guides
+                      </p>
+                    </div>
+                  </a>
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Response time: Usually within 24 hours
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1396,12 +1669,16 @@ const SearchModal = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search chats..."
+            placeholder="Search previous chat"
             className="flex-1 bg-transparent outline-none text-sm"
           />
-          <kbd className="px-2 py-1 bg-secondary border border-border rounded-lg text-xs text-muted-foreground">
-            ESC
-          </kbd>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-secondary rounded-lg transition-colors"
+            title="Close search"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
         <div className="max-h-80 overflow-y-auto">
@@ -1486,7 +1763,7 @@ const UpgradeModal = ({ onClose }: { onClose: () => void }) => {
 
         <div className="p-5">
           <p className="text-muted-foreground text-sm mb-6">
-            Unlock the full potential of NexusAI with our premium plans.
+            Unlock the full potential of MindLeaf with our premium plans.
           </p>
 
           <div className="grid md:grid-cols-2 gap-4">
@@ -1529,7 +1806,7 @@ const UpgradeModal = ({ onClose }: { onClose: () => void }) => {
                       : "bg-secondary hover:bg-secondary/80 text-foreground"
                   }`}
                 >
-                  Get {plan.name}
+                  {"Get"} {plan.name}
                 </button>
               </div>
             ))}
@@ -1595,6 +1872,7 @@ const ChatContextMenu = ({
   onPin,
   onArchive,
   onDelete,
+  onExport,
   onClose,
   position,
 }: {
@@ -1603,6 +1881,7 @@ const ChatContextMenu = ({
   onPin: () => void;
   onArchive: () => void;
   onDelete: () => void;
+  onExport: () => void;
   onClose: () => void;
   position: { x: number; y: number };
 }) => {
@@ -1626,6 +1905,7 @@ const ChatContextMenu = ({
       label: chat.isArchived ? "Unarchive" : "Archive",
       action: onArchive,
     },
+    { icon: Download, label: "Export Chat", action: onExport },
     { icon: Trash2, label: "Delete", action: onDelete, destructive: true },
   ];
 
@@ -1643,7 +1923,7 @@ const ChatContextMenu = ({
             onClose();
           }}
           className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary transition-colors ${
-            item.destructive ? "text-destructive" : ""
+            "destructive" in item && item.destructive ? "text-destructive" : ""
           }`}
         >
           <item.icon className="w-4 h-4" />
@@ -1685,7 +1965,7 @@ const Header = ({
             className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-secondary/50 hover:bg-secondary border border-border/50 rounded-xl text-sm text-muted-foreground transition-colors"
           >
             <Search className="w-4 h-4" />
-            <span>Search...</span>
+            <span>Search previous chat</span>
             <kbd className="ml-4 px-1.5 py-0.5 bg-background border border-border rounded text-xs">
               ⌘K
             </kbd>
@@ -1693,28 +1973,24 @@ const Header = ({
         </div>
 
         <div className="flex items-center gap-1">
-          <button
-            onClick={onToggleTemporaryChat}
-            className={`p-2 rounded-xl transition-colors flex items-center gap-1.5 ${
-              isTemporaryChat
-                ? "bg-accent/20 text-accent"
-                : "hover:bg-secondary text-muted-foreground"
-            }`}
-            title={
-              isTemporaryChat
+          <div className="relative group">
+            <button
+              onClick={onToggleTemporaryChat}
+              className={`p-2 rounded-xl transition-colors flex items-center gap-1.5 ${
+                isTemporaryChat
+                  ? "bg-accent/20 text-accent"
+                  : "hover:bg-secondary text-muted-foreground"
+              }`}
+            >
+              <EyeOff className="w-5 h-5" />
+            </button>
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-foreground text-background text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+              {isTemporaryChat
                 ? "Temporary chat ON - History won't be saved"
-                : "Enable temporary chat"
-            }
-          >
-            {isTemporaryChat ? (
-              <TimerOff className="w-5 h-5" />
-            ) : (
-              <Timer className="w-5 h-5" />
-            )}
-            <span className="text-xs font-medium hidden sm:inline">
-              {isTemporaryChat ? "Temp" : ""}
-            </span>
-          </button>
+                : "Open temporary chat"}
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-foreground rotate-45" />
+            </div>
+          </div>
           <button
             onClick={onOpenSettings}
             className="p-2 rounded-xl hover:bg-secondary transition-colors"
@@ -1731,7 +2007,6 @@ const Header = ({
         </div>
       </header>
 
-      {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-2xl max-w-md w-full p-8 border border-border shadow-2xl relative">
@@ -1744,9 +2019,9 @@ const Header = ({
 
             <div className="text-center mb-8">
               <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
-                <Sparkles className="w-8 h-8 text-primary-foreground" />
+                <Leaf className="w-8 h-8 text-primary-foreground" />
               </div>
-              <h2 className="text-2xl font-bold">Welcome to NexusAI</h2>
+              <h2 className="text-2xl font-bold">Welcome to MindLeaf</h2>
               <p className="text-muted-foreground text-sm mt-2">
                 Sign in to unlock all features
               </p>
@@ -1839,6 +2114,8 @@ const ChatSidebar = ({
   onRenameChat,
   onPinChat,
   onArchiveChat,
+  onExportChat,
+  onClearAllChats,
   isOpen,
   onToggle,
   onUpgradeClick,
@@ -1861,6 +2138,8 @@ const ChatSidebar = ({
   onRenameChat: (id: string, title: string) => void;
   onPinChat: (id: string) => void;
   onArchiveChat: (id: string) => void;
+  onExportChat: (id: string) => void;
+  onClearAllChats: () => void;
   isOpen: boolean;
   onToggle: () => void;
   onUpgradeClick?: () => void;
@@ -1878,7 +2157,9 @@ const ChatSidebar = ({
     position: { x: number; y: number };
   } | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState<string | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
+  const [activeSection, setActiveSection] = useState<"chats" | "projects">(
+    "chats",
+  );
 
   const filteredChats = chats.filter((c) => {
     if (currentProjectId) return c.projectId === currentProjectId;
@@ -1888,32 +2169,18 @@ const ChatSidebar = ({
   const pinnedChats = filteredChats.filter((c) => c.isPinned);
   const regularChats = filteredChats.filter((c) => !c.isPinned);
 
-  // Collapsed sidebar (icons only)
   if (isCollapsed) {
     return (
-      <aside
-        className="hidden md:flex w-16 bg-sidebar border-r border-sidebar-border flex-col h-full group/sidebar"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* Logo / Expand Button */}
+      <aside className="hidden md:flex w-16 bg-sidebar border-r border-sidebar-border flex-col h-full">
         <div className="p-3 border-b border-sidebar-border flex items-center justify-center">
-          {isHovered ? (
-            <button
-              onClick={onToggleCollapse}
-              className="w-10 h-10 rounded-xl bg-sidebar-accent hover:bg-primary/20 flex items-center justify-center transition-all"
-              title="Expand sidebar"
-            >
-              <PanelLeft className="w-5 h-5 text-muted-foreground" />
-            </button>
-          ) : (
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
-          )}
+          <button
+            onClick={onToggleCollapse}
+            className="w-10 h-10 rounded-xl bg-sidebar-accent hover:bg-primary/20 flex items-center justify-center transition-all"
+            title="Expand sidebar"
+          >
+            <PanelLeft className="w-5 h-5 text-muted-foreground" />
+          </button>
         </div>
-
-        {/* New Chat Button */}
         <div className="p-2">
           <button
             onClick={onNewChat}
@@ -1923,8 +2190,6 @@ const ChatSidebar = ({
             <Plus className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Create Project */}
         <div className="px-2 py-1">
           <button
             onClick={onCreateProject}
@@ -1934,22 +2199,7 @@ const ChatSidebar = ({
             <FolderPlus className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Spacer */}
         <div className="flex-1" />
-
-        {/* Instructions */}
-        <div className="p-2 border-t border-sidebar-border">
-          <Link
-            href="/instructions"
-            className="w-full flex items-center justify-center p-3 hover:bg-sidebar-accent rounded-xl transition-colors text-muted-foreground hover:text-foreground"
-            title="Instructions & Guide"
-          >
-            <BookOpen className="w-5 h-5" />
-          </Link>
-        </div>
-
-        {/* User Profile */}
         <div className="p-2 border-t border-sidebar-border">
           <button
             className="w-full flex items-center justify-center p-2 hover:bg-sidebar-accent rounded-xl transition-colors"
@@ -1977,14 +2227,13 @@ const ChatSidebar = ({
           isOpen ? "translate-x-0" : "-translate-x-72"
         } md:relative md:translate-x-0`}
       >
-        {/* Logo */}
         <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
+              <Leaf className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-base">NexusAI</h1>
+              <h1 className="font-bold text-base">MindLeaf</h1>
               <p className="text-xs text-muted-foreground">
                 Intelligent Assistant
               </p>
@@ -2007,7 +2256,6 @@ const ChatSidebar = ({
           </div>
         </div>
 
-        {/* New Chat Button */}
         <div className="px-3 pt-3 pb-2">
           <button
             onClick={onNewChat}
@@ -2017,185 +2265,233 @@ const ChatSidebar = ({
           </button>
         </div>
 
-        {/* Projects Section */}
-        <div className="px-3 py-2 border-b border-sidebar-border">
-          <div className="flex items-center justify-between px-2 py-1.5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Projects
-            </p>
+        <div className="px-3 py-2">
+          <div className="flex rounded-xl bg-sidebar-accent/50 p-1">
             <button
-              onClick={onCreateProject}
-              className="p-1 rounded-lg hover:bg-sidebar-accent text-muted-foreground hover:text-foreground transition-colors"
-              title="Create Project"
-            >
-              <FolderPlus className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="space-y-0.5 mt-1">
-            <button
-              onClick={() => onSelectProject(null)}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors ${
-                currentProjectId === null
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "hover:bg-sidebar-accent/50"
+              onClick={() => {
+                setActiveSection("chats");
+                onSelectProject(null);
+              }}
+              className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${
+                activeSection === "chats"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <MessageSquare className="w-4 h-4 text-muted-foreground" />
-              <span>All Chats</span>
+              Chats
             </button>
-            {projects.map((project) => (
-              <div key={project.id} className="relative group">
-                <button
-                  onClick={() => onSelectProject(project.id)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors ${
-                    currentProjectId === project.id
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "hover:bg-sidebar-accent/50"
-                  }`}
-                >
-                  <div className={`w-4 h-4 rounded ${project.color}`}></div>
-                  <span className="flex-1 text-left truncate">
-                    {project.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {project.chatCount}
-                  </span>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setProjectMenuOpen(
-                      projectMenuOpen === project.id ? null : project.id,
-                    );
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-secondary transition-all"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-                {projectMenuOpen === project.id && (
-                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl py-1 z-50 min-w-32">
-                    <button
-                      onClick={() => {
-                        onEditProject(project);
-                        setProjectMenuOpen(null);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => {
-                        onDeleteProject(project.id);
-                        setProjectMenuOpen(null);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+            <button
+              onClick={() => setActiveSection("projects")}
+              className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${
+                activeSection === "projects"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Projects
+            </button>
           </div>
         </div>
 
-        {/* Chat List */}
         <div className="flex-1 overflow-y-auto px-3 py-2">
-          {pinnedChats.length > 0 && (
+          {activeSection === "chats" ? (
             <>
-              <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <Pin className="w-3 h-3" /> Pinned
-              </p>
-              <div className="space-y-0.5 mb-3">
-                {pinnedChats.map((chat) => (
-                  <div
-                    key={chat.id}
-                    className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
-                      currentChatId === chat.id
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "hover:bg-sidebar-accent/50"
-                    }`}
-                    onClick={() => onSelectChat(chat.id)}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      setContextMenu({
-                        chat,
-                        position: { x: e.clientX, y: e.clientY },
-                      });
-                    }}
+              {pinnedChats.length > 0 && (
+                <>
+                  <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <Pin className="w-3 h-3" /> Pinned
+                  </p>
+                  <div className="space-y-0.5 mb-3">
+                    {pinnedChats.map((chat) => (
+                      <div
+                        key={chat.id}
+                        className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                          currentChatId === chat.id
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "hover:bg-sidebar-accent/50"
+                        }`}
+                        onClick={() => onSelectChat(chat.id)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setContextMenu({
+                            chat,
+                            position: { x: e.clientX, y: e.clientY },
+                          });
+                        }}
+                      >
+                        <span className="flex-1 text-sm truncate">
+                          {chat.title}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setContextMenu({
+                              chat,
+                              position: { x: e.clientX, y: e.clientY },
+                            });
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-secondary transition-all"
+                        >
+                          <MoreHorizontal className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Recent
+                </p>
+                {regularChats.length > 0 && (
+                  <button
+                    onClick={onClearAllChats}
+                    className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                    title="Clear all chats"
                   >
-                    <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
-                    <span className="flex-1 text-sm truncate">
-                      {chat.title}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {regularChats.length === 0 ? (
+                <div className="text-center text-muted-foreground text-sm py-8">
+                  <p>No conversations yet</p>
+                  <p className="text-xs mt-1">Start a new chat to begin</p>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {regularChats.map((chat) => (
+                    <div
+                      key={chat.id}
+                      className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                        currentChatId === chat.id
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "hover:bg-sidebar-accent/50"
+                      }`}
+                      onClick={() => onSelectChat(chat.id)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
                         setContextMenu({
                           chat,
                           position: { x: e.clientX, y: e.clientY },
                         });
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-secondary transition-all"
                     >
-                      <MoreHorizontal className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <span className="flex-1 text-sm truncate">
+                        {chat.title}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setContextMenu({
+                            chat,
+                            position: { x: e.clientX, y: e.clientY },
+                          });
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-secondary transition-all"
+                      >
+                        <MoreHorizontal className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
-          )}
-
-          <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Recent
-          </p>
-          {regularChats.length === 0 ? (
-            <div className="text-center text-muted-foreground text-sm py-8">
-              <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p>No conversations yet</p>
-            </div>
           ) : (
-            <div className="space-y-0.5">
-              {regularChats.map((chat) => (
-                <div
-                  key={chat.id}
-                  className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
-                    currentChatId === chat.id
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "hover:bg-sidebar-accent/50"
-                  }`}
-                  onClick={() => onSelectChat(chat.id)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setContextMenu({
-                      chat,
-                      position: { x: e.clientX, y: e.clientY },
-                    });
-                  }}
+            <>
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Your Projects
+                </p>
+                <button
+                  onClick={onCreateProject}
+                  className="p-1 rounded-lg hover:bg-sidebar-accent text-muted-foreground hover:text-foreground transition-colors"
+                  title="Create Project"
                 >
-                  <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
-                  <span className="flex-1 text-sm truncate">{chat.title}</span>
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {projects.length === 0 ? (
+                <div className="text-center text-muted-foreground text-sm py-8">
+                  <FolderPlus className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p>No projects yet</p>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setContextMenu({
-                        chat,
-                        position: { x: e.clientX, y: e.clientY },
-                      });
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-secondary transition-all"
+                    onClick={onCreateProject}
+                    className="text-xs mt-2 text-primary hover:underline"
                   >
-                    <MoreHorizontal className="w-3.5 h-3.5" />
+                    Create your first project
                   </button>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {projects.map((project) => (
+                    <div key={project.id} className="relative group">
+                      <button
+                        onClick={() => {
+                          onSelectProject(project.id);
+                          setActiveSection("chats");
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                          currentProjectId === project.id
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "hover:bg-sidebar-accent/50"
+                        }`}
+                      >
+                        <div
+                          className={`w-3 h-3 rounded-sm ${project.color}`}
+                        ></div>
+                        <span className="flex-1 text-left truncate">
+                          {project.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {project.chatCount}
+                        </span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setProjectMenuOpen(
+                            projectMenuOpen === project.id ? null : project.id,
+                          );
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-secondary transition-all"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                      {projectMenuOpen === project.id && (
+                        <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl py-1 z-50 min-w-32">
+                          <button
+                            onClick={() => {
+                              onEditProject(project);
+                              setProjectMenuOpen(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              onDeleteProject(project.id);
+                              setProjectMenuOpen(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Upgrade Banner */}
         {showUpgradeBanner && (
           <div className="p-3 border-t border-sidebar-border">
             <div className="relative bg-linear-to-br from-primary/10 to-accent/10 rounded-xl p-3 border border-primary/20">
@@ -2223,18 +2519,7 @@ const ChatSidebar = ({
           </div>
         )}
 
-        {/* Footer */}
         <div className="p-3 border-t border-sidebar-border space-y-2">
-          {/* Instructions Button */}
-          <Link
-            href="/instructions"
-            className="w-full flex items-center gap-2 hover:bg-sidebar-accent px-3 py-2 rounded-xl transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <BookOpen className="w-4 h-4" />
-            <span className="text-sm">Instructions & Guide</span>
-          </Link>
-
-          {/* User Profile */}
           <button className="w-full flex items-center gap-2 hover:bg-sidebar-accent px-2 py-2 rounded-xl transition-colors">
             <div className="w-8 h-8 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm">
               G
@@ -2248,7 +2533,6 @@ const ChatSidebar = ({
         </div>
       </aside>
 
-      {/* Context Menu */}
       {contextMenu && (
         <ChatContextMenu
           chat={contextMenu.chat}
@@ -2259,6 +2543,7 @@ const ChatSidebar = ({
           }}
           onPin={() => onPinChat(contextMenu.chat.id)}
           onArchive={() => onArchiveChat(contextMenu.chat.id)}
+          onExport={() => onExportChat(contextMenu.chat.id)}
           onDelete={() => onDeleteChat(contextMenu.chat.id)}
           onClose={() => setContextMenu(null)}
         />
@@ -2310,7 +2595,6 @@ export default function Home() {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    // Load chats
     const savedChats = localStorage.getItem("nexus-chats");
     if (savedChats) {
       try {
@@ -2332,7 +2616,6 @@ export default function Home() {
       }
     }
 
-    // Load projects
     const savedProjects = localStorage.getItem("nexus-projects");
     if (savedProjects) {
       try {
@@ -2348,7 +2631,6 @@ export default function Home() {
       }
     }
 
-    // Load theme
     const isDarkMode =
       localStorage.getItem("theme") === "dark" ||
       (!localStorage.getItem("theme") &&
@@ -2374,7 +2656,6 @@ export default function Home() {
     localStorage.setItem("theme", isDark ? "dark" : "light");
   }, [isDark]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) {
@@ -2443,6 +2724,251 @@ export default function Home() {
         chat.id === id ? { ...chat, isArchived: !chat.isArchived } : chat,
       ),
     );
+  };
+
+  const exportChat = (id: string) => {
+    const chat = chats.find((c) => c.id === id);
+    if (!chat) return;
+
+    const exportData = {
+      title: chat.title,
+      exportedAt: new Date().toISOString(),
+      messages: chat.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp.toISOString(),
+        model: m.model,
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${chat.title.replace(/[^a-z0-9]/gi, "_")}_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const clearAllChats = () => {
+    setChats([]);
+    setCurrentChatId(null);
+  };
+
+  const toggleFavoriteMessage = (chatId: string, messageId: string) => {
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === chatId
+          ? {
+              ...chat,
+              messages: chat.messages.map((msg) =>
+                msg.id === messageId
+                  ? { ...msg, isFavorite: !msg.isFavorite }
+                  : msg,
+              ),
+            }
+          : chat,
+      ),
+    );
+  };
+
+  const likeMessage = (chatId: string, messageId: string) => {
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === chatId
+          ? {
+              ...chat,
+              messages: chat.messages.map((msg) =>
+                msg.id === messageId
+                  ? { ...msg, isLiked: !msg.isLiked, isDisliked: false }
+                  : msg,
+              ),
+            }
+          : chat,
+      ),
+    );
+  };
+
+  const dislikeMessage = (chatId: string, messageId: string) => {
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === chatId
+          ? {
+              ...chat,
+              messages: chat.messages.map((msg) =>
+                msg.id === messageId
+                  ? { ...msg, isDisliked: !msg.isDisliked, isLiked: false }
+                  : msg,
+              ),
+            }
+          : chat,
+      ),
+    );
+  };
+
+  const editMessage = async (messageId: string, newContent: string) => {
+    if (!currentChatId || isLoading) return;
+
+    // Find the message index
+    const chat = chats.find((c) => c.id === currentChatId);
+    if (!chat) return;
+    const msgIndex = chat.messages.findIndex((m) => m.id === messageId);
+    if (msgIndex === -1) return;
+
+    // Update the message content and remove all messages after it
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === currentChatId
+          ? {
+              ...c,
+              messages: c.messages.slice(0, msgIndex).concat({
+                ...c.messages[msgIndex],
+                content: newContent,
+              }),
+              updatedAt: new Date(),
+            }
+          : c,
+      ),
+    );
+
+    // Regenerate the response
+    setIsLoading(true);
+    const aiResponse = await getAIResponse(
+      newContent,
+      chat.messages[msgIndex].attachments || [],
+      selectedModel,
+    );
+
+    const assistantMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: aiResponse,
+      timestamp: new Date(),
+      model: selectedModel.name,
+    };
+
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === currentChatId
+          ? {
+              ...c,
+              messages: [...c.messages, assistantMessage],
+              updatedAt: new Date(),
+            }
+          : c,
+      ),
+    );
+    setIsLoading(false);
+  };
+
+  const resendMessage = async (messageId: string) => {
+    if (!currentChatId || isLoading) return;
+
+    const chat = chats.find((c) => c.id === currentChatId);
+    if (!chat) return;
+    const msgIndex = chat.messages.findIndex((m) => m.id === messageId);
+    if (msgIndex === -1) return;
+
+    const userMsg = chat.messages[msgIndex];
+
+    // Remove all messages after this user message
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === currentChatId
+          ? {
+              ...c,
+              messages: c.messages.slice(0, msgIndex + 1),
+              updatedAt: new Date(),
+            }
+          : c,
+      ),
+    );
+
+    // Regenerate the response
+    setIsLoading(true);
+    const aiResponse = await getAIResponse(
+      userMsg.content,
+      userMsg.attachments || [],
+      selectedModel,
+    );
+
+    const assistantMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: aiResponse,
+      timestamp: new Date(),
+      model: selectedModel.name,
+    };
+
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === currentChatId
+          ? {
+              ...c,
+              messages: [...c.messages, assistantMessage],
+              updatedAt: new Date(),
+            }
+          : c,
+      ),
+    );
+    setIsLoading(false);
+  };
+
+  const regenerateResponse = async () => {
+    if (!currentChatId || isLoading) return;
+    const chat = chats.find((c) => c.id === currentChatId);
+    if (!chat || chat.messages.length < 2) return;
+
+    const lastUserMsgIndex = [...chat.messages]
+      .reverse()
+      .findIndex((m) => m.role === "user");
+    if (lastUserMsgIndex === -1) return;
+
+    const lastUserMsg =
+      chat.messages[chat.messages.length - 1 - lastUserMsgIndex];
+
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === currentChatId
+          ? {
+              ...c,
+              messages: c.messages.slice(0, -1),
+            }
+          : c,
+      ),
+    );
+
+    setIsLoading(true);
+    const aiResponse = await getAIResponse(
+      lastUserMsg.content,
+      lastUserMsg.attachments || [],
+      selectedModel,
+    );
+
+    const assistantMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: aiResponse,
+      timestamp: new Date(),
+      model: selectedModel.name,
+    };
+
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === currentChatId
+          ? {
+              ...c,
+              messages: [...c.messages, assistantMessage],
+              updatedAt: new Date(),
+            }
+          : c,
+      ),
+    );
+    setIsLoading(false);
   };
 
   const createProject = (
@@ -2572,7 +3098,6 @@ export default function Home() {
     setIsLoading(false);
   };
 
-  // Update project chat counts
   const projectsWithCounts = projects.map((p) => ({
     ...p,
     chatCount: chats.filter((c) => c.projectId === p.id).length,
@@ -2596,6 +3121,8 @@ export default function Home() {
         onRenameChat={renameChat}
         onPinChat={pinChat}
         onArchiveChat={archiveChat}
+        onExportChat={exportChat}
+        onClearAllChats={clearAllChats}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(false)}
         onUpgradeClick={() => setIsUpgradeModalOpen(true)}
@@ -2629,7 +3156,7 @@ export default function Home() {
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4 min-h-[70vh]">
                 <div className="w-20 h-20 bg-linear-to-br from-primary/20 to-accent/20 rounded-3xl flex items-center justify-center mb-6 shadow-2xl">
-                  <Sparkles className="w-10 h-10 text-primary" />
+                  <Leaf className="w-10 h-10 text-primary" />
                 </div>
                 <h2 className="text-3xl font-bold mb-3 text-balance">
                   How can I help you today?
@@ -2674,13 +3201,39 @@ export default function Home() {
               </div>
             ) : (
               <>
-                {messages.map((msg) => (
-                  <ChatMessage
-                    key={msg.id}
-                    message={msg}
-                    onCopy={copyMessage}
-                  />
-                ))}
+                {messages.map((msg, index) => {
+                  const isLastAssistant =
+                    msg.role === "assistant" && index === messages.length - 1;
+                  return (
+                    <ChatMessage
+                      key={msg.id}
+                      message={msg}
+                      onCopy={copyMessage}
+                      onToggleFavorite={() =>
+                        currentChatId &&
+                        toggleFavoriteMessage(currentChatId, msg.id)
+                      }
+                      isFavorite={msg.isFavorite}
+                      isLastAssistant={isLastAssistant}
+                      onRegenerate={
+                        isLastAssistant ? regenerateResponse : undefined
+                      }
+                      onEdit={editMessage}
+                      onResend={resendMessage}
+                      onLike={
+                        currentChatId
+                          ? (messageId) => likeMessage(currentChatId, messageId)
+                          : undefined
+                      }
+                      onDislike={
+                        currentChatId
+                          ? (messageId) =>
+                              dislikeMessage(currentChatId, messageId)
+                          : undefined
+                      }
+                    />
+                  );
+                })}
                 {isLoading && <TypingIndicator />}
                 <div ref={messagesEndRef} />
               </>
@@ -2691,7 +3244,6 @@ export default function Home() {
         {/* Input Area */}
         <div className="border-t border-border bg-card/80 backdrop-blur-xl">
           <div className="max-w-4xl mx-auto px-4 py-3">
-            {/* Code Snippets Display */}
             {codeSnippets.length > 0 && (
               <div className="space-y-2 mb-3">
                 {codeSnippets.map((snippet) => (
@@ -2708,7 +3260,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Pending Files */}
             {pendingFiles.length > 0 && (
               <div className="flex gap-2 flex-wrap mb-2 pb-2 border-b border-border">
                 {pendingFiles.map((file) => (
@@ -2725,7 +3276,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Options Row */}
             <div className="flex items-center gap-2 mb-2">
               <button
                 onClick={() => setWebSearchEnabled(!webSearchEnabled)}
@@ -2747,7 +3297,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Input Row */}
             <div className="flex items-center gap-2 bg-secondary/30 rounded-2xl border border-border shadow-sm px-2 py-1.5">
               <ModelSelector
                 selectedModel={selectedModel}
@@ -2760,25 +3309,35 @@ export default function Home() {
               >
                 <Paperclip className="w-4 h-4" />
               </button>
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  placeholder={
+                    codeSnippets.length > 0
+                      ? "Ask about your code..."
+                      : pendingFiles.length > 0
+                        ? "Ask about your files..."
+                        : "Message MindLeaf..."
                   }
-                }}
-                placeholder={
-                  codeSnippets.length > 0
-                    ? "Ask about your code..."
-                    : pendingFiles.length > 0
-                      ? "Ask about your files..."
-                      : "Message NexusAI..."
-                }
-                className="flex-1 bg-transparent outline-none text-foreground text-sm placeholder:text-muted-foreground min-w-0"
-              />
+                  className="w-full bg-transparent outline-none text-foreground text-sm placeholder:text-muted-foreground"
+                  maxLength={4000}
+                />
+              </div>
+              {inputValue.length > 0 && (
+                <span
+                  className={`text-xs ${inputValue.length > 3500 ? "text-destructive" : "text-muted-foreground"}`}
+                >
+                  {inputValue.length}/4000
+                </span>
+              )}
               <VoiceRecorder
                 onTranscript={(text) =>
                   setInputValue((prev) => prev + (prev ? " " : "") + text)
@@ -2808,7 +3367,7 @@ export default function Home() {
             </div>
 
             <p className="text-xs text-center text-muted-foreground mt-2">
-              NexusAI may produce inaccurate information. Verify important
+              MindLeaf may produce inaccurate information. Verify important
               facts.
             </p>
           </div>
@@ -2881,13 +3440,11 @@ export default function Home() {
         }
       />
 
-      {/* Voice Listening Modal */}
       <VoiceListeningModal
         isOpen={isListening}
         onClose={() => setIsListening(false)}
       />
 
-      {/* Toast */}
       {copiedMessage && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 bg-foreground text-background rounded-xl text-sm font-medium shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2">
           Copied to clipboard
