@@ -891,7 +891,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Modals */}
       <FileUploadModal
         isOpen={isFileUploadOpen}
         onClose={() => setIsFileUploadOpen(false)}
