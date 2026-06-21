@@ -133,12 +133,8 @@ export default function Home() {
         currentChatId={currentChatId}
       />
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <Header onUploadClick={() => setIsUploadModalOpen(true)} />
-
-        {/* Chat Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {!isChatStarted ? (
             <EmptyState
@@ -148,7 +144,6 @@ export default function Home() {
             />
           ) : (
             <>
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-6">
                 <div className="max-w-3xl mx-auto">
                   {messages.map((msg) => (
@@ -156,7 +151,7 @@ export default function Home() {
                   ))}
                   {isLoading && (
                     <div className="flex justify-start mb-4 gap-3">
-                      <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center flex-shrink-0 text-accent-foreground font-bold text-xs">
+                      <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0 text-accent-foreground font-bold text-xs">
                         AI
                       </div>
                       <div className="bg-card rounded-xl px-4 py-3 border border-border">
@@ -177,7 +172,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Chat Input */}
               <ChatInput
                 onSendMessage={handleSendMessage}
                 onUploadClick={() => setIsUploadModalOpen(true)}
@@ -188,7 +182,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Upload Modal */}
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}

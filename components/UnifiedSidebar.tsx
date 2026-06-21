@@ -1,81 +1,94 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Plus, Trash2, Pin, Search } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { Plus, Trash2, Pin, Search } from "lucide-react";
 
 interface ChatSession {
-  id: string
-  title: string
-  timestamp: Date
-  isPinned: boolean
+  id: string;
+  title: string;
+  timestamp: Date;
+  isPinned: boolean;
 }
 
 interface UnifiedSidebarProps {
-  onNewChat: () => void
-  onSelectChat: (chatId: string) => void
-  currentChatId: string | null
+  onNewChat: () => void;
+  onSelectChat: (chatId: string) => void;
+  currentChatId: string | null;
 }
 
-export default function UnifiedSidebar({ onNewChat, onSelectChat, currentChatId }: UnifiedSidebarProps) {
+export default function UnifiedSidebar({
+  onNewChat,
+  onSelectChat,
+  currentChatId,
+}: UnifiedSidebarProps) {
   const [chats, setChats] = useState<ChatSession[]>([
     {
-      id: '1',
-      title: 'Q&A about candidates',
+      id: "1",
+      title: "Q&A about candidates",
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
       isPinned: true,
     },
     {
-      id: '2',
-      title: 'Senior developers search',
+      id: "2",
+      title: "Senior developers search",
       timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
       isPinned: false,
     },
     {
-      id: '3',
-      title: 'Technical skills matching',
+      id: "3",
+      title: "Technical skills matching",
       timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
       isPinned: false,
     },
-  ])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isMounted, setIsMounted] = useState(false)
+  ]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true)
-  }, [])
+    setIsMounted(true);
+  }, []);
 
   const handleDeleteChat = (e: React.MouseEvent, chatId: string) => {
-    e.stopPropagation()
-    setChats(chats.filter(chat => chat.id !== chatId))
-  }
+    e.stopPropagation();
+    setChats(chats.filter((chat) => chat.id !== chatId));
+  };
 
   const handlePinChat = (e: React.MouseEvent, chatId: string) => {
-    e.stopPropagation()
-    setChats(chats.map(chat =>
-      chat.id === chatId ? { ...chat, isPinned: !chat.isPinned } : chat
-    ))
-  }
+    e.stopPropagation();
+    setChats(
+      chats.map((chat) =>
+        chat.id === chatId ? { ...chat, isPinned: !chat.isPinned } : chat,
+      ),
+    );
+  };
+
+  const handleRowKeyDown = (e: React.KeyboardEvent, chatId: string) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onSelectChat(chatId);
+    }
+  };
 
   const formatTime = (date: Date) => {
-    if (!isMounted) return '--'
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
+    if (!isMounted) return "--";
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m`
-    if (diffHours < 24) return `${diffHours}h`
-    if (diffDays < 7) return `${diffDays}d`
-    return date.toLocaleDateString()
-  }
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString();
+  };
 
-  const pinnedChats = chats.filter(c => c.isPinned)
-  const recentChats = chats.filter(c => !c.isPinned)
-  const filteredRecent = recentChats.filter(c =>
-    c.title.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const pinnedChats = chats.filter((c) => c.isPinned);
+  const recentChats = chats.filter((c) => !c.isPinned);
+  const filteredRecent = recentChats.filter((c) =>
+    c.title.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   return (
     <div className="w-64 bg-card border-r border-border flex flex-col h-screen">
@@ -87,7 +100,9 @@ export default function UnifiedSidebar({ onNewChat, onSelectChat, currentChatId 
           </div>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Candidate AI</h1>
-            <p className="text-xs text-muted-foreground">Find & match with AI</p>
+            <p className="text-xs text-muted-foreground">
+              Find & match with AI
+            </p>
           </div>
         </div>
         <button
@@ -123,23 +138,28 @@ export default function UnifiedSidebar({ onNewChat, onSelectChat, currentChatId 
             </p>
             <div className="space-y-2">
               {pinnedChats.map((chat) => (
-                <button
+                <div
                   key={chat.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelectChat(chat.id)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors group ${
+                  onKeyDown={(e) => handleRowKeyDown(e, chat.id)}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors group cursor-pointer ${
                     currentChatId === chat.id
-                      ? 'bg-primary/20 text-foreground'
-                      : 'text-foreground/70 hover:bg-muted'
+                      ? "bg-primary/20 text-foreground"
+                      : "text-foreground/70 hover:bg-muted"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{chat.title}</p>
+                      <p className="text-sm font-medium truncate">
+                        {chat.title}
+                      </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {formatTime(chat.timestamp)}
                       </p>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <button
                         onClick={(e) => handlePinChat(e, chat.id)}
                         className="p-1 hover:bg-background rounded"
@@ -156,7 +176,7 @@ export default function UnifiedSidebar({ onNewChat, onSelectChat, currentChatId 
                       </button>
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -170,23 +190,28 @@ export default function UnifiedSidebar({ onNewChat, onSelectChat, currentChatId 
             </p>
             <div className="space-y-2">
               {filteredRecent.map((chat) => (
-                <button
+                <div
                   key={chat.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelectChat(chat.id)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors group ${
+                  onKeyDown={(e) => handleRowKeyDown(e, chat.id)}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors group cursor-pointer ${
                     currentChatId === chat.id
-                      ? 'bg-primary/20 text-foreground'
-                      : 'text-foreground/70 hover:bg-muted'
+                      ? "bg-primary/20 text-foreground"
+                      : "text-foreground/70 hover:bg-muted"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{chat.title}</p>
+                      <p className="text-sm font-medium truncate">
+                        {chat.title}
+                      </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {formatTime(chat.timestamp)}
                       </p>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <button
                         onClick={(e) => handlePinChat(e, chat.id)}
                         className="p-1 hover:bg-background rounded"
@@ -203,7 +228,7 @@ export default function UnifiedSidebar({ onNewChat, onSelectChat, currentChatId 
                       </button>
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -216,5 +241,5 @@ export default function UnifiedSidebar({ onNewChat, onSelectChat, currentChatId 
         )}
       </div>
     </div>
-  )
+  );
 }
